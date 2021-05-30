@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-app-with-function
+
+  Sample SAM Template for sam-app-with-function
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 300 # So much time, because i am connecting to free tier of mongodb by mongo atlas outside the aws infrastruture
+
+Resources:
+  WebhookFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: webhook/built
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          WEBHOOK_VERIFICATION_KEY: 'xxx'
+          DB_CONNECTION_STRING: 'xxxxx'
+          ACCESS_KEY_ID: 'xxxxxx'
+          SECRET_ACCESS_KEY: 'xxxxx'
+          REGION: 'us-east-2'
+          TOPIC_ARN: 'xxxxx'
+      Events:
+        Webhook:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /webhook/{source}
+            Method: post
+            RequestParameters:
+            - method.request.path.source
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  WebhookApi:
+    Description: "API Gateway endpoint URL for Prod stage for Webhook function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook/{source}"
+  WebhookFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt WebhookFunction.Arn
+  WebhookFunctionIamRole:
+    Description: "Implicit IAM Role created for Webhook function"
+    Value: !GetAtt WebhookFunctionRole.Arn
